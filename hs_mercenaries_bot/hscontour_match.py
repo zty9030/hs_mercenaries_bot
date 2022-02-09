@@ -315,7 +315,7 @@ class HSContonurMatch:
 
     def debug_img(self,img_name,img,save_to="files/debug/"):
         if (self.debug):
-            filename = "{0}_{1}.png".format(img_name, datetime.now().strftime("%Y%m%d%H%M%S%f"))
+            filename = "{0}_{1}.png".format(img_name, datetime.now().strftime("%Y%m%d"))
             img_path = os.path.join(save_to, filename)
             cv2.imwrite(img_path,img)
 
