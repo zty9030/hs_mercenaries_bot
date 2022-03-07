@@ -1,5 +1,6 @@
 from ahk import AHK
 
+from .mac_ahk import AHK, win
 import pyautogui
 
 class CONSTANT:
@@ -7,7 +8,7 @@ class CONSTANT:
 
 #magic numbers for the different resolutions
 class r19201080:
-    debug_img = False
+    debug_img = True
     # pickup treasure and vistor margin
     treasure_x_margin = 300
     treasure_y_margin = 200
@@ -33,12 +34,13 @@ import logging
 class HSSetting:
   
     def __init__(self,  resolution):
-        logging.basicConfig(filename='files\\debug\\hs_bot.log', level=logging.INFO)
+        logging.basicConfig(filename='files/debug/hs_bot.log', level=logging.INFO)
         self.resolution = resolution
         self.possibility = 0.6
         self.screenshot_id = 1
         self.ahk = AHK()
-        self.win =self.ahk.win_get(title=CONSTANT.GAME_NAME)
+        # self.win =self.ahk.win_get(title=CONSTANT.GAME_NAME)
+        self.win = win()
         self.bring_game()
 
     
@@ -52,11 +54,12 @@ class HSSetting:
         return imgpath
 
     def bring_game(self):
-        self.win.show()
-        self.win.restore()
-        self.win.maximize()
-        self.win.to_top()      
-        self.win.activate()
+        return 
+        # self.win.show()
+        # self.win.restore()
+        # self.win.maximize()
+        # self.win.to_top()      
+        # self.win.activate()
     
     def debug_msg(self,msg,ci=None):
         if ci == None:

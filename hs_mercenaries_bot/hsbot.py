@@ -31,7 +31,7 @@ class HSBot:
         if sleep_time ==0:
             sleep_time = random.randint(1,2)
         move_speed = random.randint(5,10)
-        self.ahk.mouse_move(x + x_margin, y +y_margin, speed=move_speed) 
+        self.ahk.mouse_move(x + x_margin, y +y_margin, move_speed) 
         self.ahk.click()
         time.sleep(sleep_time)
 
@@ -39,7 +39,7 @@ class HSBot:
         if sleep_time ==0:
             sleep_time = random.randint(1,2)
         move_speed = random.randint(5,10)
-        self.ahk.mouse_move(x + x_margin, y +y_margin, speed=move_speed) 
+        self.ahk.mouse_move(x + x_margin, y +y_margin, move_speed) 
         self.ahk.right_click()
         time.sleep(sleep_time)
                 
@@ -53,12 +53,13 @@ class HSBot:
             action_calls = [location_calls]
         while (len(location) == 0 and retry < max_retry):
             if retry != 0:
-                self.click_left_blank()
-                time.sleep(2)
+                # self.click_left_blank()
+                time.sleep(1)
                 self.hssetting.debug_msg("retry to find the %s  %s  " % (action_call.__name__,retry))
             retry +=1
             for action_call in action_calls:
                 location = (action_call(self.hssetting.screenshot()))
+                print(location)
                 if (len(location) == 0 and retry <= max_retry ):
                     continue
                 else:
