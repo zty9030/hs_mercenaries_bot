@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 .vscode/*.*
 files/debug/*.png
+.DS_Store
+*.ipynb
