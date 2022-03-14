@@ -98,7 +98,7 @@ class HSContonurMatch:
             ind = np.lexsort((array_a[:, 0], array_a[:, 1]))
         return array_a[ind]
 
-    def list_allow_spell_cards(self, imgpath):
+    def list_enemy_and_minion(self, imgpath):
         img = cv2.imread(imgpath)
         left_x_cut_pect = 1/4
         right_x_cut_pect = 1/4
@@ -116,8 +116,8 @@ class HSContonurMatch:
         self.debug_img("list_canny_img", canny_img)
         contours, _ = cv2.findContours(
             canny_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        cards_locations = []
         minion_locations = []
+        enemy_locations = []
         h, w = img.shape[:2]
         for contour in contours:
             area = cv2.contourArea(contour)
@@ -127,25 +127,25 @@ class HSContonurMatch:
                 extBot = tuple(contour[contour[:, :, 1].argmax()][0])
                 if (h * 1 / 2 < extTop[1] <= h*3 / 4):  # the cards position
 
-                    cards_locations.append(
+                    minion_locations.append(
                         [extTop[0] - 50 + int(w*left_x_cut_pect), extTop[1] + 100])
                 if (h * 1 / 4 <= extBot[1] <= h*1 / 2):  # the minions position
-                    minion_locations.append(
+                    enemy_locations.append(
                         [extBot[0] + int(w*left_x_cut_pect), extBot[1] - 50])
                 if self.debug:
                     cv2.drawContours(crop_img, [contour], 0, (random.randint(
                         0, 256), random.randint(0, 256), random.randint(0, 256)), 2)
         self.debug_img("list_contour_img", crop_img)
-        if (cards_locations == [] or minion_locations == []):
+        if (minion_locations == [] or enemy_locations == []):
             return []
-        cards_locations = HSContonurMatch.sort_2d_array(cards_locations)
         minion_locations = HSContonurMatch.sort_2d_array(minion_locations)
+        enemy_locations = HSContonurMatch.sort_2d_array(enemy_locations)
 
         if self.debug:
+            self._debug_img_with_text(enemy_locations, img)
             self._debug_img_with_text(minion_locations, img)
-            self._debug_img_with_text(cards_locations, img)
             self.debug_img("list", img)
-        return [minion_locations, cards_locations]
+        return [enemy_locations, minion_locations]
 
     def list_mercenary_collections(self, imgpath):
         img = cv2.imread(imgpath)
@@ -194,7 +194,7 @@ class HSContonurMatch:
                 return True
             return False
         return self._hsv_contour(
-            imgpath, (30, 130, 255), (90, 255, 255), 100, 300, 0, 30,
+            imgpath, (30, 0, 255), (90, 255, 255), 100, 300, -10, 30,
             kernal=[9, 9], contour_position=position,img_name='spell')
 
     def find_battle_green_ready(self, imgpath):
@@ -284,10 +284,11 @@ class HSContonurMatch:
                 return True
             return False
         locations_1 = self._hsv_contour(
-            imgpath, (19, 160, 100), (39, 240, 205), 300, 500, 0, -10, kernal=[11, 11], contour_position=position, img_name='new1')
-        # return locations_1
+            imgpath, (19, 160, 100), (39, 240, 205), 300, 500, 0, -10, 
+            kernal=[11, 11], contour_position=position, img_name='new1')
         locations_2 = self._hsv_contour(
-            imgpath, (40, 100, 0), (150, 255, 255), 300, 500, 0, -10, kernal=[11, 11], contour_position=position, img_name='new2')
+            imgpath, (40, 100, 0), (150, 255, 255), 300, 500, 0, -10, 
+            kernal=[11, 11], contour_position=position, img_name='new2')
         if locations_1.size and locations_2.size :
             return np.concatenate((locations_1, locations_2))
         return locations_1 if locations_1 else locations_2
@@ -422,12 +423,14 @@ class HSContonurMatch:
         return result
 
     def find_battle(self, img_path):
-        res = self._find_object(img_path, 'find_battle')
+        res = self._find_object(img_path, 'find_battle', min_match_num=8)
         if not len(res[0]):
             return res
         location_spell = self.list_card_spells(img_path)
         print(location_spell)
-        location_minion = self.list_allow_spell_cards(img_path)
+        location_minion = self.list_enemy_and_minion(img_path)
+        if len(location_spell) and len(location_minion):
+            return 
         print(location_minion)
         
 
