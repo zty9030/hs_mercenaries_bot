@@ -1,4 +1,3 @@
-from http import client
 import time
 import wda
 import random
