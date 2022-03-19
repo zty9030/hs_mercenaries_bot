@@ -3,16 +3,15 @@ import cv2
 import logging
 import numpy as np
 import random
-
+import time
 import os
 from datetime import datetime
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))+'/../'
 
 class HSContonurMatch:
-
-    def __init__(self) -> None:
-        self.debug = True
+    def __init__(self, debug=True) -> None:
+        self.debug = debug
 
     def list_allow_move_cards(self, imgpath):
         img = cv2.imread(imgpath)
@@ -190,11 +189,11 @@ class HSContonurMatch:
 
     def list_card_spells(self, imgpath):
         def position(w, h, cx, cy):
-            if h*0.35 < cy < h*0.55:
+            if h*0.35 < cy < h*0.55 and w*0.3<cx<w*0.7:
                 return True
             return False
         return self._hsv_contour(
-            imgpath, (30, 0, 255), (90, 255, 255), 100, 300, -10, 30,
+            imgpath, (30, 0, 255), (90, 255, 255), 200, 300, -10, 30,
             kernal=[9, 9], contour_position=position,img_name='spell')
 
     def find_battle_green_ready(self, imgpath):
@@ -280,18 +279,19 @@ class HSContonurMatch:
 
     def list_map_moves(self, imgpath):
         def position(w, h, cx, cy):
-            if w*0.15 < cx < 0.71 * w and cy <= 0.65*h:
+            if w*0.15 < cx < 0.71 * w and 0.3*h<= cy<= 0.9*h:
                 return True
             return False
         locations_1 = self._hsv_contour(
-            imgpath, (19, 160, 100), (39, 240, 205), 300, 500, 0, -10, 
-            kernal=[11, 11], contour_position=position, img_name='new1')
+            imgpath, (19, 160, 100), (39, 240, 205), 200, 400, 0, -10, 
+            kernal=[13, 13], contour_position=position, img_name='map1')
         locations_2 = self._hsv_contour(
-            imgpath, (40, 100, 0), (150, 255, 255), 300, 500, 0, -10, 
-            kernal=[11, 11], contour_position=position, img_name='new2')
-        if locations_1.size and locations_2.size :
+            imgpath, (40, 100, 0), (150, 255, 255), 200, 300, 0, -10, 
+            kernal=[11, 11], contour_position=position, img_name='map2')
+        print(locations_1, locations_2)
+        if len(locations_1) and len(locations_2) :
             return np.concatenate((locations_1, locations_2))
-        return locations_1 if locations_1 else locations_2
+        return locations_1 if len(locations_1) else locations_2
 
     def debug_img(self, img_name, img, save_to="files/debug/"):
         if (self.debug):
@@ -378,22 +378,28 @@ class HSContonurMatch:
         return result[0] if len(result[0]) else result[1]
         
     def find_bounties(self, img_path):
-        return self._find_object(img_path, 'find_bounties', min_match_num=8)
+        return self._find_object(img_path, 'find_bounties', min_match_num=40)
 
     def find_team(self, img_path):
-        return self._find_object(img_path, 'find_team', min_match_num=8)
+        return self._find_object(img_path, 'find_team', min_match_num=20)
 
     def find_map_next(self, img_path):
         result = self._find_object(img_path, 'find_map')
-        if not isinstance(result, int):
+        if isinstance(result, int):
             return result
+        time.sleep(2)
+        res = self._find_object(img_path, 'find_map_play')
+        if not isinstance(res, int):
+            return res.tolist()
         location_angel = self._find_object(img_path, 'find_angel')
+        print(location_angel)
         location_minion = self.list_map_moves(img_path)
-        if isinstance(location_angel, np.array):
+        print(location_minion)
+        if not isinstance(location_angel, int):
             distance = [loc for loc in location_minion if np.linalg.norm(location_angel-loc)<80]
             if distance:
-                return distance[0]
-        return location_minion[0]
+                return distance[0].tolist()
+        return location_minion[0].tolist() if len(location_minion) else 0
         
     def find_treasure(self, img_path):
         return self._find_object(img_path, 'find_treasure')
@@ -402,17 +408,19 @@ class HSContonurMatch:
         return self._find_object(img_path, 'find_chest', min_match_num=8)
 
     def find_complete(self, img_path):
-        return self._find_object(img_path, 'find_complete')
+        return self._find_object(img_path, 'find_complete', min_match_num=10)
 
     def find_battle(self, img_path):
         res = self._find_object(img_path, 'find_battle', min_match_num=8)
         if isinstance(res, int):
             return res
+        time.sleep(1)
         location_spell = self.list_card_spells(img_path)
-        # print(location_spell)
+        print('spell', location_spell)
         location_minion = self.list_enemy_and_minion(img_path)
+        print('minion', location_minion)
         if len(location_spell) and len(location_minion):
-            return [location_spell[0], location_minion[0][0]]
+            return [location_spell[0].tolist(), location_minion[0][0].tolist()]
         else:
             return [0,0]
         
@@ -422,17 +430,18 @@ class HSContonurMatch:
 if __name__ == '__main__':
     hcm = HSContonurMatch()
     # print(CURRENT_PATH)
-    print(hcm.find_bounties(CURRENT_PATH + 'files/iphone11pm/bounties.jpg'))
-    print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
-    print(hcm.find_map_next(CURRENT_PATH + 'files/iphone11pm/map.jpg'))
-    print(hcm.find_map_next(CURRENT_PATH + 'files/iphone11pm/angel.jpg'))
-    print(hcm.find_treasure(CURRENT_PATH + 'files/iphone11pm/treasure.jpg'))
-    print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
-    print(hcm.find_complete(CURRENT_PATH + 'files/iphone11pm/complete.jpg'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle0.jpg'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle1.jpg'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle2.jpg'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle3.jpg'))
+    # print(hcm.find_bounties(CURRENT_PATH + 'files/iphone11pm/bounties.jpg'))
+    # print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
+    # print(hcm.find_map_next(CURRENT_PATH + 'files/iphone11pm/map.jpg'))
+    # print(hcm.find_map_next(CURRENT_PATH + 'files/iphone11pm/angel.jpg'))
+    print(hcm.find_map_next(CURRENT_PATH + 'ios_game.png'))
+    # print(hcm.find_treasure(CURRENT_PATH + 'files/iphone11pm/treasure.jpg'))
+    # print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
+    # print(hcm.find_complete(CURRENT_PATH + 'files/iphone11pm/complete.jpg'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle0.jpg'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle1.jpg'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle2.jpg'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle3.jpg'))
     
     
     

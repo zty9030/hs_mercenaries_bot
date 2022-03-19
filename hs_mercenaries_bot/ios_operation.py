@@ -17,10 +17,10 @@ class IOS_Action:
         self.width = self.session.window_size().width
         print(self.height, self.width)
     
-    def get_screenshot(self):
+    def get_screenshot(self, img_path='ios_screen.png'):
         img = self.client.screenshot()
         img = img.resize([self.width, self.height])
-        img.save('ios_screen.png')
+        img.save(img_path)
         
     def phone_action(self, *args):
         act_second = round(random.random() * 0.4 + 0.1, 2)
