@@ -13,72 +13,6 @@ class HSContonurMatch:
     def __init__(self, debug=True) -> None:
         self.debug = debug
 
-    def list_allow_move_cards(self, imgpath):
-        img = cv2.imread(imgpath)
-        left_x_cut_pect = 1/4
-        right_x_cut_pect = 1/4
-        top_y_cut_pect = 1/2 + 1/6
-        bottom_y_cut_pect = 0
-        crop_img = self.crop_img(
-            img, left_x_cut_pect, right_x_cut_pect, top_y_cut_pect, bottom_y_cut_pect)
-
-        img_hsv = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
-        hs_mask = cv2.inRange(img_hsv, (40, 130, 255), (90, 255, 255))
-        kernel = np.ones((21, 21), 'uint8')
-        dilate_img = cv2.dilate(hs_mask, kernel)
-        self.debug_img("list_allow_move_cards_dilate_img", dilate_img)
-        h, w = img.shape[:2]
-        ch, _ = crop_img.shape[:2]
-        contours, _ = cv2.findContours(
-            dilate_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-        locations = []
-        approx_locations = []
-        for contour in contours:
-            approx = cv2.approxPolyDP(
-                contour, 0.01 * cv2.arcLength(contour, False), False)
-            area = cv2.contourArea(contour)
-            arcLength = cv2.arcLength(contour, False)
-            if ((arcLength >= 200) and (area >= 2000)):
-                for p in approx:
-                    approx_locations.append(p[0])
-        if approx_locations == []:
-            return locations
-        approx_locations = np.array(approx_locations)
-        approx_locationss_rows = np.where(
-            (approx_locations[:, 1] >= ch - 100) & (approx_locations[:, 1] <= ch))
-        approx_locations = approx_locations[approx_locationss_rows]
-        approx_locations = HSContonurMatch.sort_2d_array(approx_locations)
-
-        tmp_locations = []
-        for idx in range(len(approx_locations) - 1):
-            x = approx_locations[idx][0]
-            y = approx_locations[idx][1]
-            if len(tmp_locations) != 0:
-                tmp_max_x = np.max(tmp_locations, axis=0)[0]
-                if x - tmp_max_x > 30 or len(approx_locations) == idx+1:
-                    tmp_locations_a = np.array(tmp_locations)
-                    max_point_row = np.where(
-                        tmp_locations_a[:, 1] == np.max(tmp_locations, axis=0)[1])
-                    position = tmp_locations_a[max_point_row][0]
-                    locations.append([position[0] + int(w*left_x_cut_pect), position[1]+int(
-                        h*top_y_cut_pect) + self.resolution.allow_move_card_y_margin])
-                    tmp_locations = []
-            tmp_locations.append([x, y])
-
-        for idx in range(len(locations)):
-            if idx < len(locations) - 1:
-                locations[idx][0] = locations[idx][0] + \
-                    int((locations[idx+1][0] - locations[idx][0]) / 3)
-            else:
-                locations[idx][0] = locations[idx][0] + 50
-
-        if self.debug:
-            self._debug_img_with_text(locations, img)
-            self.debug_img("list_allow_move_cards", img)
-
-        return locations
-
     @staticmethod
     def crop_img(img, left_x_cut_pect, right_x_cut_pect, top_y_cut_pect, bottom_y_cut_pect):
         h, w = img.shape[:2]
@@ -135,7 +69,8 @@ class HSContonurMatch:
                     cv2.drawContours(crop_img, [contour], 0, (random.randint(
                         0, 256), random.randint(0, 256), random.randint(0, 256)), 2)
         self.debug_img("list_contour_img", crop_img)
-        if (minion_locations == [] or enemy_locations == []):
+        print(minion_locations, enemy_locations)
+        if (enemy_locations == []):
             return []
         minion_locations = HSContonurMatch.sort_2d_array(minion_locations)
         enemy_locations = HSContonurMatch.sort_2d_array(enemy_locations)
@@ -196,15 +131,6 @@ class HSContonurMatch:
             imgpath, (30, 0, 255), (90, 255, 255), 200, 300, -10, 30,
             kernal=[9, 9], contour_position=position,img_name='spell')
 
-    def find_battle_green_ready(self, imgpath):
-        def position(w, h, cx, cy):
-            if w*3/5 < cx:
-                return True
-            return False
-        return self._hsv_contour(imgpath, (40, 130, 255), (90, 255, 255), 300, 1000, 0, 20, kernal=[13, 13], contour_position=position)
-
-    def list_rewards(self, imgpath):
-        return self._hsv_contour(imgpath, (90, 110, 130), (179, 255, 255), 100, 800)
 
     def _hsv_contour(self, imgpath, min_hsv, max_hsv, min_arcLength, min_area,  cx_margin=0, cy_margin=0, kernal=[5, 5], contour_position=None, img_name='dilate_img_hsv_contour'):
         def everywhere(w, h, cx, cy):
@@ -243,43 +169,9 @@ class HSContonurMatch:
             self.debug_img(f"{img_name}_final", img)
         return locations
 
-    #Todo - incomplete
-    def is_spell_target(self, imgpath):
-        img = cv2.imread(imgpath)
-        # img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        red_mask = cv2.inRange(img, (0, 0, 190), (30, 30, 255))
-        kernel = np.ones((11, 11), 'uint8')
-        red_mask = cv2.dilate(red_mask, kernel)
-        contours, _ = cv2.findContours(
-            red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-        self.debug_img("is_spell_target_mask", red_mask)
-        locations = []
-        for contour in contours:
-            approx = cv2.approxPolyDP(
-                contour, 0.01 * cv2.arcLength(contour, False), False)
-            area = cv2.contourArea(contour)
-            arcLength = cv2.arcLength(contour, False)
-
-            if ((arcLength >= 200) and (area >= 200)):
-
-                M = cv2.moments(contour)
-                if M['m00'] != 0.0:
-                    cx = int(M['m10']/M['m00'])
-                    cy = int(M['m01']/M['m00'])
-                    locations.append([cx, cy-10])
-                    if self.debug:
-                        cv2.drawContours(img, [contour], 0, (random.randint(
-                            0, 256), random.randint(0, 256), random.randint(0, 256)), 2)
-        self.debug_img("is_spell_target_contours", img)
-        locations = HSContonurMatch.sort_2d_array(locations)
-        if self.debug:
-            self._debug_img_with_text(locations, img)
-            self.debug_img("is_spell_target_final", img)
-        return locations
-
     def list_map_moves(self, imgpath):
         def position(w, h, cx, cy):
-            if w*0.15 < cx < 0.71 * w and 0.3*h<= cy<= 0.9*h:
+            if w*0.15 < cx < 0.71 * w and 0.3*h<= cy<= 0.8*h:
                 return True
             return False
         locations_1 = self._hsv_contour(
@@ -288,15 +180,15 @@ class HSContonurMatch:
         locations_2 = self._hsv_contour(
             imgpath, (40, 100, 0), (150, 255, 255), 200, 300, 0, -10, 
             kernal=[11, 11], contour_position=position, img_name='map2')
-        print(locations_1, locations_2)
+        print('location1',locations_1,'location2', locations_2)
         if len(locations_1) and len(locations_2) :
             return np.concatenate((locations_1, locations_2))
         return locations_1 if len(locations_1) else locations_2
 
     def debug_img(self, img_name, img, save_to="files/debug/"):
-        if (self.debug):
-            filename = "{0}_{1}.png".format(
-                img_name, datetime.now().strftime("%Y%m%d"))
+        if self.debug:
+            filename = "{0}.png".format(
+                img_name)
             img_path = os.path.join(save_to, filename)
             print(f'Img save to {img_path}')
             cv2.imwrite(img_path, img)
@@ -334,7 +226,6 @@ class HSContonurMatch:
                 img_debug = cv2.drawMatchesKnn(
                     query, kp1, train, kp2, good, flags=2, outImg=img_match)
                 self.debug_img(img_name, img_debug)
-
             # re-group the pts .
             pts_groups = []
             pts = np.float32([kp2[m[0].trainIdx].pt for m in good])
@@ -387,14 +278,16 @@ class HSContonurMatch:
         result = self._find_object(img_path, 'find_map')
         if isinstance(result, int):
             return result
-        time.sleep(2)
+        res = self._find_object(img_path, 'find_map_camp')
+        if not isinstance(res, int):
+            return [0, 0]
         res = self._find_object(img_path, 'find_map_play')
         if not isinstance(res, int):
             return res.tolist()
         location_angel = self._find_object(img_path, 'find_angel')
         print(location_angel)
         location_minion = self.list_map_moves(img_path)
-        print(location_minion)
+        # print(location_minion)
         if not isinstance(location_angel, int):
             distance = [loc for loc in location_minion if np.linalg.norm(location_angel-loc)<80]
             if distance:
@@ -402,7 +295,8 @@ class HSContonurMatch:
         return location_minion[0].tolist() if len(location_minion) else 0
         
     def find_treasure(self, img_path):
-        return self._find_object(img_path, 'find_treasure')
+        res = self._find_object(img_path, 'find_treasure')
+        return res if not isinstance(res, int) else self._find_object(img_path, 'find_treasure_replace')
     
     def find_chest(self, img_path):
         return self._find_object(img_path, 'find_chest', min_match_num=8)
@@ -414,7 +308,6 @@ class HSContonurMatch:
         res = self._find_object(img_path, 'find_battle', min_match_num=8)
         if isinstance(res, int):
             return res
-        time.sleep(1)
         location_spell = self.list_card_spells(img_path)
         print('spell', location_spell)
         location_minion = self.list_enemy_and_minion(img_path)
@@ -428,17 +321,17 @@ class HSContonurMatch:
 
 
 if __name__ == '__main__':
-    hcm = HSContonurMatch()
+    hcm = HSContonurMatch(debug=True)
     # print(CURRENT_PATH)
     # print(hcm.find_bounties(CURRENT_PATH + 'files/iphone11pm/bounties.jpg'))
     # print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
-    # print(hcm.find_map_next(CURRENT_PATH + 'files/iphone11pm/map.jpg'))
-    # print(hcm.find_map_next(CURRENT_PATH + 'files/iphone11pm/angel.jpg'))
-    print(hcm.find_map_next(CURRENT_PATH + 'ios_game.png'))
+    # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/idle_124.png'))
+    # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/play_map_3.png'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_2.png'))
     # print(hcm.find_treasure(CURRENT_PATH + 'files/iphone11pm/treasure.jpg'))
     # print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
-    # print(hcm.find_complete(CURRENT_PATH + 'files/iphone11pm/complete.jpg'))
-    # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle0.jpg'))
+    # print(hcm.find_complete(CURRENT_PATH + 'files/debug/idle_34.png'))
+    print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_10.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle1.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle2.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle3.jpg'))
