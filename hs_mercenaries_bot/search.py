@@ -69,7 +69,7 @@ class HSContonurMatch:
                     cv2.drawContours(crop_img, [contour], 0, (random.randint(
                         0, 256), random.randint(0, 256), random.randint(0, 256)), 2)
         self.debug_img("list_contour_img", crop_img)
-        print(minion_locations, enemy_locations)
+        # print(minion_locations, enemy_locations)
         if (enemy_locations == []):
             return []
         minion_locations = HSContonurMatch.sort_2d_array(minion_locations)
@@ -203,7 +203,6 @@ class HSContonurMatch:
         train = cv2.cvtColor(large_img, cv2.COLOR_BGR2GRAY)
         query = cv2.cvtColor(small_img, cv2.COLOR_BGR2GRAY)
         sift = cv2.SIFT_create()
-
         try:
             query = small_img
             kp1, des1 = sift.detectAndCompute(query, None)
@@ -241,12 +240,10 @@ class HSContonurMatch:
                         pts[:, 1] <= pt[1] + qh) & (pts[:, 0] >= pt[0] - qw) & (pts[:, 0] <= pt[0] + qw))
                     approx_pts = pts[approx_pts_rows]
                     pts_groups.append(approx_pts)
-
             max_number_group = []
             for pts_group in pts_groups:
                 if len(pts_group) > len(max_number_group):
                     max_number_group = pts_group
-
             if len(max_number_group) < min_match_nums:
                 logging.debug("Err - good %s for action %s , less than threshold %s" %
                               (len(max_number_group), 'action', min_match_nums))
@@ -254,7 +251,6 @@ class HSContonurMatch:
             else:
                 logging.debug(" good %s for action %s" %
                               (len(max_number_group), 'action'))
-
             x, y = np.mean(max_number_group, axis=0)
             return np.array([int(x), int(y)]), len(max_number_group)
         except Exception as e:
@@ -278,14 +274,14 @@ class HSContonurMatch:
         result = self._find_object(img_path, 'find_map')
         if isinstance(result, int):
             return result
-        res = self._find_object(img_path, 'find_map_camp')
+        res = self._find_object(img_path, 'find_map_camp', min_match_num=10)
         if not isinstance(res, int):
             return [0, 0]
         res = self._find_object(img_path, 'find_map_play')
         if not isinstance(res, int):
             return res.tolist()
         location_angel = self._find_object(img_path, 'find_angel')
-        print(location_angel)
+        # print(location_angel)
         location_minion = self.list_map_moves(img_path)
         # print(location_minion)
         if not isinstance(location_angel, int):
@@ -311,8 +307,8 @@ class HSContonurMatch:
         location_spell = self.list_card_spells(img_path)
         print('spell', location_spell)
         location_minion = self.list_enemy_and_minion(img_path)
-        print('minion', location_minion)
         if len(location_spell) and len(location_minion):
+            print('minion', location_minion[0][0])
             return [location_spell[0].tolist(), location_minion[0][0].tolist()]
         else:
             return [0,0]
@@ -327,11 +323,11 @@ if __name__ == '__main__':
     # print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/idle_124.png'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/play_map_3.png'))
-    # print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_2.png'))
-    # print(hcm.find_treasure(CURRENT_PATH + 'files/iphone11pm/treasure.jpg'))
+    print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_9.png'))
+    # print(hcm.find_treasure(CURRENT_PATH + 'files/debug/play_treassure_34.png'))
     # print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
     # print(hcm.find_complete(CURRENT_PATH + 'files/debug/idle_34.png'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_10.png'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_10.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle1.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle2.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle3.jpg'))
