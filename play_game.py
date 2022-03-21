@@ -1,6 +1,8 @@
 from hs_mercenaries_bot import ios_operation, search, action
-import sys, select
+import sys
+import select
 import cv2
+
 
 def game(img, connection):
     hsgame = search.HSContonurMatch(debug=False)
@@ -31,6 +33,7 @@ def game(img, connection):
     hsaction.action_idle()
     return 'idle'
 
+
 def auto_process(step_count=-1, round_count=1):
     img_path = 'ios_game.png'
     ios_connect = ios_operation.IOS_Action()
@@ -39,31 +42,33 @@ def auto_process(step_count=-1, round_count=1):
         ios_connect.get_screenshot(img_path)
         res = game(img_path, ios_connect)
         print(res)
-        step+=1
-        if step_count>0 and step>=step_count:
+        step += 1
+        if step_count > 0 and step >= step_count:
             break
-        
+
         if is_not_correct():
             img = cv2.imread(img_path)
             file_name = f'files/debug/{res}_{step}.png'
             print(file_name)
             cv2.imwrite(file_name, img)
-        
+
 
 def is_not_correct():
     timeout = 2
-    print (f"This action correct?")
+    print(f"This action correct?")
     i, o, e = select.select([sys.stdin], [], [], timeout)
     if i:
         sys.stdin.readline()
     # print('stdin', sys.stdin, 'i', i)
     return bool(i)
 
+
 def test_correct():
     while True:
         print(is_not_correct())
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     # test_correct()
     # step_process()
     auto_process(step_count=-1)

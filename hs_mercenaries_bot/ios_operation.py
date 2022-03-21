@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from PIL import Image
 
+
 class IOS_Action:
     def __init__(self, address='') -> None:
         if address:
@@ -16,55 +17,57 @@ class IOS_Action:
         self.height = self.session.window_size().height
         self.width = self.session.window_size().width
         print(self.height, self.width)
-    
+
     def get_screenshot(self, img_path='ios_screen.png'):
         img = self.client.screenshot()
         img = img.resize([self.width, self.height])
         img.save(img_path)
-        
+
     def phone_action(self, *args):
-        act_second = round(random.random() * 0.4 + 0.1, 2)
-        if len(args)==1:
+        if len(args) == 1:
+            act_second = round(random.random() * 0.1 + 0.1, 2)
             coord = args[0]
             print('Do click', [coord[0], coord[1]])
             self.session.click(coord[0], coord[1], act_second)
         else:
+            act_second = round(random.random() * 0.1 + 0.2, 2)
             coord1, coord2 = args[0], args[1]
-            print('Do swipe from',[coord1[0],coord1[1]], 'to', [coord2[0], coord2[1]])
-            self.session.swipe(coord1[0],coord1[1], coord2[0], coord2[1], act_second)
-            
+            print('Do swipe from', [coord1[0], coord1[1]],
+                  'to', [coord2[0], coord2[1]])
+            self.session.swipe(coord1[0], coord1[1],
+                               coord2[0], coord2[1], act_second)
+
+
 def mannual_mode():
     # ios_act = IOS_Action('http://192.168.1.5:8100')
     ios_act = IOS_Action()
 
-
     def update_data():
         img = Image.open('ios_screen.png')
         return np.array(img)
-    
+
     def updatefig(*args):
         global cor
         global time_period
         global click_count
-        
-        if len(cor)>1:
+
+        if len(cor) > 1:
             ios_act.phone_action(*cor)
             cor = []
         now = time.perf_counter()
-        if len(cor)>1 or (time_period and (now - time_period) > 1):
+        if len(cor) > 1 or (time_period and (now - time_period) > 1):
             try:
                 ios_act.phone_action(*cor)
-            except:
+            except Exception:
                 pass
             cor = []
             time_period = 0
             click_count = 0
-        
+
         ios_act.get_screenshot()
         im.set_array(update_data())
         # time.sleep(3)
         return im,
-
 
     def on_click(event):
         global click_count
@@ -77,7 +80,7 @@ def mannual_mode():
         cor.append(coords)
         time_period = time.perf_counter()
         click_count += 1
-        
+
     # click_count = 0
     # cor = []
     # time_period = 0
@@ -90,7 +93,8 @@ def mannual_mode():
     _ = animation.FuncAnimation(fig, updatefig, interval=500, blit=True)
     plt.show()
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     click_count = 0
     cor = []
     time_period = 0
