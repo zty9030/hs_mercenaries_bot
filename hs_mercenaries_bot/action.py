@@ -34,6 +34,8 @@ class Action:
     def action_battle(self, location_pair):
         if location_pair == [0, 0]:
             self._action_sleep([725, 200])
+        elif isinstance(location_pair[0], int):
+            self._action_sleep(location_pair)
         else:
             self._action_sleep(
                 location_pair[0], location_pair, min_wait_sec=2)
@@ -51,4 +53,4 @@ class Action:
         self._action_sleep([440, 345])
 
     def action_idle(self):
-        self._action_sleep([230, 170])
+        self._action_sleep([230, 140])

@@ -1,4 +1,6 @@
+from ctypes import Union
 from dis import dis
+from click import Tuple
 import cv2
 import logging
 import numpy as np
@@ -54,6 +56,7 @@ class HSContonurMatch:
             canny_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         minion_locations = []
         enemy_locations = []
+        all_locations = []
         h, w = img.shape[:2]
         for contour in contours:
             area = cv2.contourArea(contour)
@@ -61,12 +64,14 @@ class HSContonurMatch:
             if ((arcLength >= 250) and (area >= 100)):
                 extTop = tuple(contour[contour[:, :, 1].argmin()][0])
                 extBot = tuple(contour[contour[:, :, 1].argmax()][0])
-                if (h * 1 / 2 < extTop[1] <= h*3 / 4):  # the cards position
-
+                if (h * 1 / 4 < extTop[1] <= h*3 / 4):
+                    all_locations.append(
+                        [extBot[0] + int(w*left_x_cut_pect), extBot[1] - 50])
+                if (h * .55 < extTop[1] <= h*3 / 4):  # the minion position
                     minion_locations.append(
-                        [extTop[0] - 50 + int(w*left_x_cut_pect),
-                         extTop[1] + 100])
-                if (h * 1 / 4 <= extBot[1] <= h*1 / 2):  # the minions position
+                        [extTop[0] - 30 + int(w*left_x_cut_pect),
+                         extTop[1] + 60])
+                if (h * 1 / 4 <= extBot[1] <= h*1 / 2):  # the enemy position
                     enemy_locations.append(
                         [extBot[0] + int(w*left_x_cut_pect), extBot[1] - 50])
                 if self.debug:
@@ -76,16 +81,17 @@ class HSContonurMatch:
                          random.randint(0, 256)), 2)
         self.debug_img("list_contour_img", crop_img)
         # print(minion_locations, enemy_locations)
-        if (enemy_locations == []):
-            return []
+
         minion_locations = HSContonurMatch.sort_2d_array(minion_locations)
         enemy_locations = HSContonurMatch.sort_2d_array(enemy_locations)
-
+        all_locations = HSContonurMatch.sort_2d_array(all_locations)
         if self.debug:
             self._debug_img_with_text(enemy_locations, img)
             self._debug_img_with_text(minion_locations, img)
             self.debug_img("list", img)
-        return [enemy_locations, minion_locations]
+        if not len(enemy_locations) :
+            return all_locations, []
+        return enemy_locations, minion_locations
 
     def list_card_spells(self, imgpath):
         def position(w, h, cx, cy):
@@ -262,7 +268,7 @@ class HSContonurMatch:
                         if np.linalg.norm(location_angel-loc) < 80]
             if distance:
                 return distance[0].tolist()
-        return location_minion[0].tolist() if len(location_minion) else 0
+        return random.choice(location_minion).tolist() if len(location_minion) else 0
 
     def find_treasure(self, img_path):
         res = self._find_object(img_path, 'find_treasure')
@@ -279,15 +285,32 @@ class HSContonurMatch:
         res = self._find_object(img_path, 'find_battle', min_match_num=8)
         if isinstance(res, int):
             return res
+        res = self._find_object(img_path, 'find_battle_ready', 10)
+        if not isinstance(res, int):
+            print('battle ready, go')
+            return [0, 0]
         location_spell = self.list_card_spells(img_path)
         print('spell', location_spell)
-        location_minion = self.list_enemy_and_minion(img_path)
-        if len(location_spell) and len(location_minion):
-            print('minion', location_minion[0][0])
-            return [location_spell[0].tolist(), location_minion[0][0].tolist()]
-        else:
-            return [0, 0]
-
+        location_enemy, location_minion = self.list_enemy_and_minion(img_path)
+        print(location_enemy)
+        if len(location_enemy):
+            enemy_idx = int(round(random.random()-1,0))
+            enemy_location = location_enemy[enemy_idx].tolist()
+            print('enemy', enemy_location)
+            if len(location_spell):
+                spell_idx = min(len(location_spell)-1, 0)
+                return [location_spell[spell_idx].tolist(),
+                        enemy_location]
+            elif len(location_minion):
+                minion_location = random.choice(location_minion).tolist()
+                print('minion', minion_location)
+                return minion_location
+            else:
+                print('minion not ready')
+                return [0, 0]
+        return 0
+    def find_victory(self, img_path):
+        return self._find_object(img_path, 'find_victory')
 
 if __name__ == '__main__':
     hcm = HSContonurMatch(debug=True)
@@ -296,10 +319,13 @@ if __name__ == '__main__':
     # print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/idle_124.png'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/play_map_3.png'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_9.png'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_36.png'))
+    print(hcm.find_battle(CURRENT_PATH + 'ios_game.png'))
+    # print(hcm._find_object(CURRENT_PATH + 'files/debug/paly_battle_2.png','find_battle_ready', ))
     # print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
     # print(hcm.find_complete(CURRENT_PATH + 'files/debug/idle_34.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_10.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle1.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle2.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle3.jpg'))
+    # print(hcm.find_victory(CURRENT_PATH + 'files/iphone11pm/victory.jpg'))
