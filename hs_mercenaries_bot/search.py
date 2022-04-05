@@ -1,13 +1,9 @@
-from ctypes import Union
-from dis import dis
-from click import Tuple
-import cv2
+"""search"""
 import logging
-import numpy as np
 import random
-import time
 import os
-from datetime import datetime
+import numpy as np
+import cv2
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))+'/../'
 
@@ -19,10 +15,10 @@ class HSContonurMatch:
     @staticmethod
     def crop_img(img, left_x_cut_pect, right_x_cut_pect,
                  top_y_cut_pect, bottom_y_cut_pect):
-        h, w = img.shape[:2]
+        height, weight = img.shape[:2]
         cropped_image = img[
-            int(h*top_y_cut_pect): h - int(h*bottom_y_cut_pect),
-            int(w*left_x_cut_pect): w - int(w*right_x_cut_pect)]
+            int(height*top_y_cut_pect): height - int(height*bottom_y_cut_pect),
+            int(weight*left_x_cut_pect): weight - int(weight*right_x_cut_pect)]
         return cropped_image
 
     @staticmethod
@@ -44,9 +40,9 @@ class HSContonurMatch:
             img, left_x_cut_pect, right_x_cut_pect, 0, 0)
         img_gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
         kernel = np.ones((3, 3), 'uint8')
-        bg = cv2.dilate(img_gray, kernel)
-        img_decrease_bright = cv2.divide(img_gray, bg, scale=255)
-        img_decrease_bright = cv2.divide(img_decrease_bright, bg, scale=255)
+        dilate_img = cv2.dilate(img_gray, kernel)
+        img_decrease_bright = cv2.divide(img_gray, dilate_img, scale=255)
+        img_decrease_bright = cv2.divide(img_decrease_bright, dilate_img, scale=255)
         self.debug_img("list_decrease_bright",
                        img_decrease_bright)
         canny_img = cv2.Canny(img_decrease_bright, 0, 255)
@@ -57,23 +53,23 @@ class HSContonurMatch:
         minion_locations = []
         enemy_locations = []
         all_locations = []
-        h, w = img.shape[:2]
+        height, weight = img.shape[:2]
         for contour in contours:
             area = cv2.contourArea(contour)
-            arcLength = cv2.arcLength(contour, False)
-            if ((arcLength >= 250) and (area >= 100)):
+            arc_length = cv2.arcLength(contour, False)
+            if ((arc_length >= 250) and (area >= 100)):
                 extTop = tuple(contour[contour[:, :, 1].argmin()][0])
                 extBot = tuple(contour[contour[:, :, 1].argmax()][0])
-                if (h * 1 / 4 < extTop[1] <= h*3 / 4):
+                if height * 1 / 4 < extTop[1] <= height*3 / 4:
                     all_locations.append(
-                        [extBot[0] + int(w*left_x_cut_pect), extBot[1] - 50])
-                if (h * .55 < extTop[1] <= h*3 / 4):  # the minion position
+                        [extBot[0] + int(weight*left_x_cut_pect), extBot[1] - 50])
+                if height * .55 < extTop[1] <= height*3 / 4:  # the minion position
                     minion_locations.append(
-                        [extTop[0] - 30 + int(w*left_x_cut_pect),
+                        [extTop[0] - 30 + int(weight*left_x_cut_pect),
                          extTop[1] + 60])
-                if (h * 1 / 4 <= extBot[1] <= h*1 / 2):  # the enemy position
+                if height * 1 / 4 <= extBot[1] <= height*1 / 2:  # the enemy position
                     enemy_locations.append(
-                        [extBot[0] + int(w*left_x_cut_pect), extBot[1] - 50])
+                        [extBot[0] + int(weight*left_x_cut_pect), extBot[1] - 50])
                 if self.debug:
                     cv2.drawContours(
                         crop_img, [contour], 0,
@@ -89,7 +85,7 @@ class HSContonurMatch:
             self._debug_img_with_text(enemy_locations, img)
             self._debug_img_with_text(minion_locations, img)
             self.debug_img("list", img)
-        if not len(enemy_locations) :
+        if len(enemy_locations) == 0:
             return all_locations, []
         return enemy_locations, minion_locations
 
@@ -147,7 +143,7 @@ class HSContonurMatch:
 
     def list_map_moves(self, imgpath):
         def position(w, h, cx, cy):
-            if w*0.15 < cx < 0.71 * w and 0.3*h <= cy <= 0.8*h:
+            if w*0.15 < cx < 0.71 * w and 0.1*h <= cy <= 0.8*h:
                 return True
             return False
         locations_1 = self._hsv_contour(
@@ -170,11 +166,11 @@ class HSContonurMatch:
             cv2.imwrite(img_path, img)
 
     def _debug_img_with_text(self, locations, img):
-        for idx in range(len(locations)):
+        for idx, location in enumerate(locations):
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(img, '%s' % (
-                idx + 1), (locations[idx][0], locations[idx][1]),
-                        font, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                idx + 1), (location[0], location[1]),
+                font, 1, (0, 255, 0), 2, cv2.LINE_AA)
 
     def _feature_match(self, large_img, small_img, min_match_nums=15,
                        img_name=''):
@@ -204,7 +200,7 @@ class HSContonurMatch:
                 self.debug_img(img_name, img_debug)
             # re-group the pts .
             pts_groups = []
-            pts = np.float32([kp2[m[0].trainIdx].pt for m in good])
+            pts = np.array([kp2[m[0].trainIdx].pt for m in good]).astype(np.float32)
             qh, qw = query.shape[:2]
             for pt in pts:
                 in_group = False
@@ -226,8 +222,8 @@ class HSContonurMatch:
             if len(max_number_group) < min_match_nums:
                 return [], len(max_number_group)
             else:
-                logging.debug(" good %s for action %s" %
-                              (len(max_number_group), 'action'))
+                logging.debug(" good %s for action %s" ,
+                              len(max_number_group), 'action')
             x, y = np.mean(max_number_group, axis=0)
             return np.array([int(x), int(y)]), len(max_number_group)
         except Exception as e:
@@ -241,7 +237,7 @@ class HSContonurMatch:
         result = self._feature_match(
             large_img, small_img, min_match_nums=min_match_num,
             img_name=target_name)
-        return result[0] if len(result[0]) else result[1]
+        return result[0] if len(result[0])>0 else result[1]
 
     def find_bounties(self, img_path):
         return self._find_object(img_path, 'find_bounties', min_match_num=40)
@@ -293,7 +289,7 @@ class HSContonurMatch:
         print('spell', location_spell)
         location_enemy, location_minion = self.list_enemy_and_minion(img_path)
         print(location_enemy)
-        if len(location_enemy):
+        if len(location_enemy) > 0:
             enemy_idx = int(round(random.random()-1,0))
             enemy_location = location_enemy[enemy_idx].tolist()
             print('enemy', enemy_location)
@@ -301,7 +297,7 @@ class HSContonurMatch:
                 spell_idx = min(len(location_spell)-1, 0)
                 return [location_spell[spell_idx].tolist(),
                         enemy_location]
-            elif len(location_minion):
+            elif len(location_minion) > 0:
                 minion_location = random.choice(location_minion).tolist()
                 print('minion', minion_location)
                 return minion_location
@@ -318,9 +314,9 @@ if __name__ == '__main__':
     # print(hcm.find_bounties(CURRENT_PATH + 'files/iphone11pm/bounties.jpg'))
     # print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/idle_124.png'))
-    # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/play_map_3.png'))
-    # print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_36.png'))
-    print(hcm.find_battle(CURRENT_PATH + 'ios_game.png'))
+    # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/play_map_12.png'))
+    print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_134.png'))
+    # print(hcm.find_battle(CURRENT_PATH + 'ios_game.png'))
     # print(hcm._find_object(CURRENT_PATH + 'files/debug/paly_battle_2.png','find_battle_ready', ))
     # print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
     # print(hcm.find_complete(CURRENT_PATH + 'files/debug/idle_34.png'))
