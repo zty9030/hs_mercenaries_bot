@@ -42,7 +42,7 @@ class Action:
 
     def action_treassure(self):
         # select, confirm
-        self._action_sleep([380, 210], [540, 370])
+        self._action_sleep([380, 210], [500, 340])
 
     def action_chest(self):
         # chest 1,2,3, confirm
@@ -53,4 +53,4 @@ class Action:
         self._action_sleep([440, 345])
 
     def action_idle(self):
-        self._action_sleep([230, 140])
+        self._action_sleep([100, 140], [460, 215])

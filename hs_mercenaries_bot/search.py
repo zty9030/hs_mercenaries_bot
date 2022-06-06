@@ -277,8 +277,8 @@ class HSContonurMatch:
     def find_complete(self, img_path):
         return self._find_object(img_path, 'find_complete', min_match_num=10)
 
-    def find_battle(self, img_path):
-        res = self._find_object(img_path, 'find_battle', min_match_num=8)
+    def find_battle(self, img_path, spell_idx=1):
+        res = self._find_object(img_path, 'find_battle', min_match_num=6)
         if isinstance(res, int):
             return res
         res = self._find_object(img_path, 'find_battle_ready', 10)
@@ -294,7 +294,7 @@ class HSContonurMatch:
             enemy_location = location_enemy[enemy_idx].tolist()
             print('enemy', enemy_location)
             if len(location_spell):
-                spell_idx = min(len(location_spell)-1, 0)
+                spell_idx = min(len(location_spell)-1, int(spell_idx)-1)
                 return [location_spell[spell_idx].tolist(),
                         enemy_location]
             elif len(location_minion) > 0:
@@ -315,7 +315,7 @@ if __name__ == '__main__':
     # print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/idle_124.png'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/play_map_12.png'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_134.png'))
+    print(hcm.find_battle(CURRENT_PATH + 'files/debug/idle_2.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'ios_game.png'))
     # print(hcm._find_object(CURRENT_PATH + 'files/debug/paly_battle_2.png','find_battle_ready', ))
     # print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
