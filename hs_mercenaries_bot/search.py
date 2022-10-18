@@ -275,7 +275,7 @@ class HSContonurMatch:
         return self._find_object(img_path, 'find_chest', min_match_num=8)
 
     def find_complete(self, img_path):
-        return self._find_object(img_path, 'find_complete', min_match_num=10)
+        return self._find_object(img_path, 'find_complete', min_match_num=8)
 
     def find_battle(self, img_path, spell_idx=1):
         res = self._find_object(img_path, 'find_battle', min_match_num=6)
@@ -305,8 +305,23 @@ class HSContonurMatch:
                 print('minion not ready')
                 return [0, 0]
         return 0
+
     def find_victory(self, img_path):
         return self._find_object(img_path, 'find_victory')
+
+    def find_campfire(self, img_path):
+        res = self._find_object(img_path, 'find_campfire')
+        if isinstance(res, int):
+            return 0
+        res = self._hsv_contour(
+            img_path, (90, 100, 200), (110, 255, 255),
+            300, 400, -50, -10,img_name='complete')
+        if len(res):
+            return res[0].tolist()
+        return [20,200]
+
+    def find_coin_reward(self, img_path):
+        return self._find_object(img_path, 'find_coinreward')
 
 if __name__ == '__main__':
     hcm = HSContonurMatch(debug=True)
@@ -315,13 +330,17 @@ if __name__ == '__main__':
     # print(hcm.find_team(CURRENT_PATH + 'files/iphone11pm/team.jpg'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/idle_124.png'))
     # print(hcm.find_map_next(CURRENT_PATH + 'files/debug/play_map_12.png'))
-    print(hcm.find_battle(CURRENT_PATH + 'files/debug/idle_2.png'))
+    # print(hcm.find_battle(CURRENT_PATH + 'files/debug/idle_2.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'ios_game.png'))
     # print(hcm._find_object(CURRENT_PATH + 'files/debug/paly_battle_2.png','find_battle_ready', ))
     # print(hcm.find_chest(CURRENT_PATH + 'files/iphone11pm/chest.jpg'))
-    # print(hcm.find_complete(CURRENT_PATH + 'files/debug/idle_34.png'))
+    # print(hcm.find_complete(CURRENT_PATH + 'files/debug/idle_363.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/debug/paly_battle_10.png'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle1.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle2.jpg'))
     # print(hcm.find_battle(CURRENT_PATH + 'files/iphone11pm/battle3.jpg'))
     # print(hcm.find_victory(CURRENT_PATH + 'files/iphone11pm/victory.jpg'))
+    print(hcm.find_campfire(CURRENT_PATH + 'files/debug/play campfire_116.png'))
+    # print(hcm.find_campfire(CURRENT_PATH + 'files/iphone11pm/campfire2.jpg'))
+    # print(hcm.find_coin_reward(CURRENT_PATH + 'files/iphone11pm/coinreward.jpg'))
+

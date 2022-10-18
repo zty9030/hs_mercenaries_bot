@@ -8,7 +8,7 @@ import cv2
 from hs_mercenaries_bot import ios_operation, search, action
 
 
-def game(img, hsaction, spell_idx):
+def game(img, hsaction: action, spell_idx):
     hsgame = search.HSContonurMatch(debug=False)
     if not isinstance(hsgame.find_bounties(img), int):
         hsaction.action_bounties()
@@ -37,6 +37,13 @@ def game(img, hsaction, spell_idx):
     if not isinstance(hsgame.find_complete(img), int):
         hsaction.action_complete()
         return 'play_complete'
+    location = hsgame.find_campfire(img)
+    if not isinstance(location, int):
+        hsaction.action_campfire(location)
+        return 'play campfire'
+    if not isinstance(hsgame.find_coin_reward(img), int):
+        hsaction.action_complete()
+        return 'play coin reward'
     return 'idle'
 
 

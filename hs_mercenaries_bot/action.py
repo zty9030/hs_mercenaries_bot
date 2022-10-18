@@ -53,4 +53,9 @@ class Action:
         self._action_sleep([440, 345])
 
     def action_idle(self):
-        self._action_sleep([100, 140], [460, 215])
+        self._action_sleep(random.choice([[100, 140], [460, 215]]))
+
+    def action_campfire(self, location):
+        print('click', location)
+        self._action_sleep(location, [310, 335], min_wait_sec=1)
+        
