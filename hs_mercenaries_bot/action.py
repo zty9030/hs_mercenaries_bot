@@ -57,5 +57,5 @@ class Action:
 
     def action_campfire(self, location):
         print('click', location)
-        self._action_sleep(location, [310, 335], min_wait_sec=1)
+        self._action_sleep(location, [305, 305], min_wait_sec=1)
         

@@ -127,7 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-.vscode/*.*
-files/debug/*.png
+.vscode
+files/debug
 .DS_Store
 *.ipynb

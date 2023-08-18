@@ -1,4 +1,5 @@
-""""""
+"""
+"""
 import time
 import argparse
 import sys
@@ -23,11 +24,11 @@ def game(img, hsaction: action, spell_idx):
     location = hsgame.find_battle(img, spell_idx)
     if not isinstance(location, int):
         hsaction.action_battle(location)
-        return 'paly_battle'
+        return 'play_battle'
     location = hsgame.find_victory(img)
     if not isinstance(location, int):
         hsaction.action_idle()
-        return 'paly_victory'
+        return 'play_victory'
     if not isinstance(hsgame.find_treasure(img), int):
         hsaction.action_treassure()
         return 'play_treassure'
@@ -40,19 +41,18 @@ def game(img, hsaction: action, spell_idx):
     location = hsgame.find_campfire(img)
     if not isinstance(location, int):
         hsaction.action_campfire(location)
-        return 'play campfire'
+        return 'play_campfire'
     if not isinstance(hsgame.find_coin_reward(img), int):
         hsaction.action_complete()
-        return 'play coin reward'
+        return 'play_coin_reward'
     return 'idle'
 
 
 def auto_process(total_round=20):
-    img_path = 'ios_game.png'
+    img_path = search.CURRENT_PATH + 'files/debug/ios_game.png'
     ios_connect = ios_operation.IOS_Action()
     hsaction = action.Action(ios_connect)
-    idle_count = 0
-    step = 0
+    idle_count = step = 0
     start_time = time.perf_counter()
     spell_idx  = 1
     pause = False
@@ -70,12 +70,13 @@ def auto_process(total_round=20):
             else:
                 idle_count = 0
             if res == 'play_complete':
-                total_round -= 1
                 end_time = time.perf_counter()
-                print('Round finish', total_round, 'remain')
-                print('Round take', round(end_time-start_time,3))
-                time.sleep(2)
-                start_time = end_time
+                if end_time-start_time>400:
+                    total_round -= 1
+                    print('Round finish', total_round, 'remain')
+                    print('Round take', round(end_time-start_time,3))
+                    start_time = end_time
+                time.sleep(5)
             if total_round == 0:
                 save_screen(img_path, 'exit', step)
                 ios_connect.client.home()
@@ -107,7 +108,7 @@ def save_screen(img_path, res, step):
 
 
 def wait_for_input():
-    timeout = round(1.8 + random.random() * 0.4, 2)
+    timeout = round(1 + random.random() * 0.4, 2)
     print("This action correct?")
     i, _, _ = select.select([sys.stdin], [], [], timeout)
     if i:

@@ -226,8 +226,8 @@ class HSContonurMatch:
                               len(max_number_group), 'action')
             x, y = np.mean(max_number_group, axis=0)
             return np.array([int(x), int(y)]), len(max_number_group)
-        except Exception as e:
-            print(e)
+        except Exception as error:
+            print(error)
             return [], 0
 
     def _find_object(self, img_path, target_name, min_match_num=15):
@@ -297,7 +297,7 @@ class HSContonurMatch:
                 spell_idx = min(len(location_spell)-1, int(spell_idx)-1)
                 return [location_spell[spell_idx].tolist(),
                         enemy_location]
-            elif len(location_minion) > 0:
+            if len(location_minion) > 0:
                 minion_location = random.choice(location_minion).tolist()
                 print('minion', minion_location)
                 return minion_location
@@ -343,4 +343,3 @@ if __name__ == '__main__':
     print(hcm.find_campfire(CURRENT_PATH + 'files/debug/play campfire_116.png'))
     # print(hcm.find_campfire(CURRENT_PATH + 'files/iphone11pm/campfire2.jpg'))
     # print(hcm.find_coin_reward(CURRENT_PATH + 'files/iphone11pm/coinreward.jpg'))
-
